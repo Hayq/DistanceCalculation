@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/Distancecalculation.iml" filepath="$PROJECT_DIR$/Distancecalculation.iml" />
+      <module fileurl="file://$PROJECT_DIR$/DistanceCalculation.iml" filepath="$PROJECT_DIR$/DistanceCalculation.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
     </modules>
   </component>

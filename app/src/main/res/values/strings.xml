@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Distance calculation</string>
-    <string name="title_activity_maps">Map</string>
+    <string name="app_name">Distance calculator</string>
+    <string name="title_activity_maps">Distance calculator</string>
     <string name="reset">Reset</string>
 </resources>

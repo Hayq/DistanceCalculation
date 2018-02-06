@@ -2,13 +2,11 @@ package com.example.hayq.distancecalculation;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
-import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
@@ -24,19 +22,19 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
-import com.google.android.gms.maps.model.GroundOverlayOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.model.Polygon;
-import com.google.android.gms.maps.model.PolygonOptions;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, View.OnClickListener {
     private GoogleMap mMap;
     private LocationManager locationManager;
     private Marker target1;
     private Marker target2;
-    private Polygon polygon;
+    private Marker polylineMarker;
+    private Polyline polyline;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,7 +77,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-        //Location Permishion
+        //Location Permission
         mapInit();
 
         mMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
@@ -116,7 +114,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 {
                     locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
                             1000, 0, locationListener);
-                    mMap.setMyLocationEnabled(true);
                 }
                 break;
             default:
@@ -125,15 +122,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void setCurrentLocation(Location marker) {
-        double latitute = marker.getLatitude();
+        double latitude = marker.getLatitude();
         double longitude = marker.getLongitude();
 
         mMap.addMarker(new MarkerOptions()
-            .position(new LatLng(latitute, longitude))
+            .position(new LatLng(latitude, longitude))
             .draggable(false));
 
         CameraPosition cameraPosition = new CameraPosition.Builder()
-                .target(new LatLng(latitute, longitude))
+                .target(new LatLng(latitude, longitude))
                 .zoom((float) 17)
                 .bearing(30)
                 .tilt(16)
@@ -146,12 +143,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void setTargets(LatLng targets) {
         Marker marker = mMap.addMarker(new MarkerOptions()
                             .position(targets)
-                            .icon(BitmapDescriptorFactory.fromResource(R.drawable.target)));
+                            .icon(BitmapDescriptorFactory.fromResource(R.drawable.start)));
 
         if( target1 == null ) {
             target1 = marker;
             return;
         }
+
+        marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.target));
 
         if( target2 == null ){
             target2 = marker;
@@ -160,14 +159,52 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             target2 = marker;
         }
 
-        PolygonOptions polygonOptions = new PolygonOptions()
-                .strokeWidth(4)
-                .add(target1.getPosition(), target2.getPosition());
+        if( polyline != null ){
+            polyline.remove();
+            polylineMarker.remove();
+        }
 
-        if( polygon != null )
-            polygon.remove();
+        drawDistance(target1.getPosition(), target2.getPosition());
+    }
 
-        polygon = mMap.addPolygon(polygonOptions);
+    private void drawDistance(LatLng t1, LatLng t2) {
+        float km = 0;
+
+        float[] result = new float[1];
+        try{
+            Location.distanceBetween(target1.getPosition().latitude, target1.getPosition().longitude,
+                    target2.getPosition().latitude, target2.getPosition().longitude,
+                    result);
+        }catch(Exception ex){
+            Log.e("DISTANCE", "setTargets: " + ex.toString());
+        }
+
+        //LINE
+        polyline = mMap.addPolyline(new PolylineOptions().add(target1.getPosition(), target2.getPosition()));
+        polyline.setClickable(true);
+        mMap.setOnPolylineClickListener(new GoogleMap.OnPolylineClickListener() {
+            @Override
+            public void onPolylineClick(Polyline polyline) {
+                polylineMarker.showInfoWindow();
+            }
+        });
+
+        LatLng center = new LatLng( (t1.latitude + t2.latitude)/2,
+                (t1.longitude + t2.longitude) / 2);
+
+        polylineMarker = mMap.addMarker(new MarkerOptions()
+                .position(center)
+                .icon(BitmapDescriptorFactory.fromResource(R.drawable.line)));
+
+        if( result[0] > 1000 ) {
+            km = result[0]/1000;
+            String str_km = String.format("%.2f", km);
+            polylineMarker.setTitle(String.valueOf(str_km) + " kilometers");
+        }else{
+            polylineMarker.setTitle(String.valueOf((int)result[0]) + " meter");
+        }
+
+        polylineMarker.showInfoWindow();
     }
 
     @Override
@@ -176,6 +213,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         {
             case R.id.reset:
                 resetTargets();
+                break;
+            default:
                 break;
         }
     }
@@ -191,9 +230,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             target2 = null;
         }
 
-        if( polygon != null ){
-            polygon.remove();
-            polygon = null;
+        if( polyline != null ){
+            polylineMarker.remove();
+            polyline.remove();
+            polyline = null;
         }
     }
 }
