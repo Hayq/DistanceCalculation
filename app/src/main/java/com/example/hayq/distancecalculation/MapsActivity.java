@@ -2,11 +2,15 @@ package com.example.hayq.distancecalculation;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
@@ -103,6 +107,30 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                             1000, 0, locationListener);
             }
         }
+
+        checkLocationStatus();
+    }
+
+    private void checkLocationStatus() {
+        if( !locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER) ){
+            AlertDialog.Builder dialog = new AlertDialog.Builder(this);
+            dialog.setMessage(this.getResources().getString(R.string.gps_network_not_enabled));
+            dialog.setPositiveButton(this.getResources().getString(R.string.open_location_settings), new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface paramDialogInterface, int paramInt) {
+                    Intent myIntent = new Intent( Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                    startActivity(myIntent);
+                }
+            });
+            dialog.setNegativeButton(this.getString(R.string.Cancel), new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface paramDialogInterface, int paramInt) {
+                    checkLocationStatus();
+                    return;
+                }
+            });
+            dialog.show();
+        }
     }
 
     @SuppressLint("MissingPermission")
@@ -168,15 +196,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void drawDistance(LatLng t1, LatLng t2) {
-        float km = 0;
-
         float[] result = new float[1];
         try{
             Location.distanceBetween(target1.getPosition().latitude, target1.getPosition().longitude,
                     target2.getPosition().latitude, target2.getPosition().longitude,
                     result);
         }catch(Exception ex){
-            Log.e("DISTANCE", "setTargets: " + ex.toString());
+            Log.e("drawDistance", ex.toString());
         }
 
         //LINE
@@ -197,11 +223,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .icon(BitmapDescriptorFactory.fromResource(R.drawable.line)));
 
         if( result[0] > 1000 ) {
-            km = result[0]/1000;
-            String str_km = String.format("%.2f", km);
-            polylineMarker.setTitle(String.valueOf(str_km) + " kilometers");
+            float km = result[0]/1000;
+            polylineMarker.setTitle(String.format("%.2f", km) + " Kilometers");
         }else{
-            polylineMarker.setTitle(String.valueOf((int)result[0]) + " meter");
+            int mt = (int)result[0];
+            polylineMarker.setTitle(String.valueOf(mt) + " Meters");
         }
 
         polylineMarker.showInfoWindow();
