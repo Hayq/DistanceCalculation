@@ -1,6 +1,4 @@
 # Distance Calculator
 
-You must grant access to the location.
-Then the application will find you, after which you should select 2 points on the map (with a long touch of one position), then you can see the distance between these points.
-
-Thank you for attention.
+In order to select two points on the map and display the distance between them grant access to the device's location.Then the application will find you, after which select 2 points on the map with a long touch on the screen. After selecting the points
+the distance between them will be calculated. To reset the selected points click the Reset button.
